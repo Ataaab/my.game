@@ -1,0 +1,562 @@
+<title>Match Night</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;800&display=swap">
+<style>
+/* Palette from the scrapbook theme: deep grass-teal night, tiffany accent, cream (kraft) text, gold = warning, red = alert. */
+:root{
+  --night:#0a2b2a; --panel:#123f3c; --panel2:#1a5450; --line:#2e7a72;
+  --pitch:#22b36a; --pitch-d:#127a46; --purple:#7de2d4; --amber:#f2c14e; --red:#e8453c;
+  --text:#fbf4e2; --mute:#a9cfc3;
+  --display:'Tajawal','Segoe UI',system-ui,-apple-system,'Noto Sans Arabic',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--text);font-family:var(--display);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;
+  background-image:radial-gradient(900px 500px at 80% -10%,#14504a 0,transparent 60%),radial-gradient(700px 400px at -10% 110%,#1b6b3a 0,transparent 55%);
+  background-attachment:fixed}
+#app{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:12px;min-height:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.brand{font-weight:800;letter-spacing:.14em;font-size:15px;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.brand i{width:12px;height:12px;border-radius:50%;background:var(--pitch);box-shadow:0 0 12px var(--pitch)}
+.chips{display:flex;gap:6px}
+.chip{padding:3px 12px;border-radius:99px;border:1px solid var(--line);color:var(--mute);font-size:13px;font-weight:500}
+.chip.on{background:var(--purple);border-color:var(--purple);color:#0d3b36;font-weight:800}
+.chip.done{background:var(--pitch-d);border-color:var(--pitch-d);color:#fff}
+.tools{display:flex;gap:6px}
+.tbtn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:14px}
+.tbtn:hover{border-color:var(--purple)}
+.screen{flex:1;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+h1{font-size:clamp(34px,6vw,64px);line-height:1.05;margin:0;font-weight:800}
+h1 em{font-style:normal;color:var(--pitch)}
+h2{font-size:clamp(22px,3vw,30px);margin:0;font-weight:800}
+p{margin:0}
+.mute{color:var(--mute)}
+.big{font-size:18px}
+.btn{background:var(--pitch);border:0;color:#04170d;font-weight:800;border-radius:14px;padding:14px 26px;font-size:20px;box-shadow:0 6px 0 var(--pitch-d);transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--pitch-d)}
+.btn.sec{background:var(--panel2);color:var(--text);box-shadow:0 6px 0 #082322}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+/* start */
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:stretch}
+.hero-l{display:flex;flex-direction:column;gap:16px;justify-content:center;padding:6px 0}
+.rules{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.rules li{display:flex;gap:12px;align-items:flex-start}
+.rules b{flex:none;width:30px;height:30px;border-radius:9px;background:var(--panel2);display:grid;place-items:center;color:var(--amber);font-weight:800}
+.prize{display:flex;gap:10px;flex-wrap:wrap}
+.pz{flex:1 1 200px;border:1px dashed var(--line);border-radius:12px;padding:10px 14px}
+.pz b{display:block;color:var(--amber)}
+canvas{display:block;width:100%;height:auto;border-radius:16px;background:#072120}
+/* plan */
+.plan{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.alloc{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.node{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.node h3{margin:0;font-size:17px}
+.pips{display:flex;gap:4px;flex-wrap:wrap;min-height:20px}
+.pip{width:14px;height:20px;border-radius:5px 5px 3px 3px;background:var(--amber)}
+.step{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.step button{width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:22px;font-weight:800}
+.step button:hover:not(:disabled){border-color:var(--pitch)}
+.step button:disabled{opacity:.35}
+.pool{display:flex;align-items:center;gap:10px}
+.pool b{font-size:30px;color:var(--amber)}
+.bars{display:grid;gap:10px;margin-top:12px}
+.bar{display:grid;grid-template-columns:78px 1fr 44px;gap:10px;align-items:center;font-size:14px}
+.track{height:14px;background:var(--night);border-radius:9px;overflow:hidden}
+.fill{height:100%;background:linear-gradient(90deg,var(--purple),var(--pitch));border-radius:9px;width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+/* live */
+.live{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:14px;align-items:start}
+.hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.timer{flex:1 1 160px;height:12px;background:var(--panel);border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+.timer i{display:block;height:100%;width:0;background:var(--purple)}
+.scorebox{font-weight:800;font-size:22px;min-width:84px;text-align:end}
+.scorebox small{display:block;font-size:11px;color:var(--mute);font-weight:500;letter-spacing:.08em;text-transform:uppercase}
+.stage{position:relative}
+.banner{position:absolute;inset-inline:12px;top:12px;background:var(--amber);color:#2b1a00;border-radius:12px;padding:10px 14px;font-weight:800;display:none;box-shadow:0 8px 24px #0008}
+.banner.show{display:block;animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+.cards{display:grid;gap:10px}
+.nc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:8px;transition:border-color .2s,box-shadow .2s}
+.nc.warn{border-color:var(--amber)}
+.nc.crit{border-color:var(--red);box-shadow:0 0 0 2px #e8453c44}
+.nc-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.nc-h b{font-size:17px}
+.wait{font-weight:800;font-variant-numeric:tabular-nums}
+.qbar{height:10px;border-radius:8px;background:var(--night);overflow:hidden}
+.qbar i{display:block;height:100%;width:0;background:var(--pitch);transition:width .15s,background .2s}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.act{border:1px solid var(--line);background:var(--panel2);border-radius:11px;padding:9px 6px;font-size:14px;font-weight:500;min-height:44px}
+.act:hover:not(:disabled){border-color:var(--purple)}
+.act:disabled{opacity:.4;cursor:not-allowed}
+/* result */
+.res{display:grid;grid-template-columns:.9fr 1.1fr;gap:14px}
+.ring{width:210px;height:210px;border-radius:50%;display:grid;place-items:center;margin:0 auto;background:conic-gradient(var(--pitch) calc(var(--p)*1%),var(--panel2) 0)}
+.ring div{width:170px;height:170px;border-radius:50%;background:var(--panel);display:grid;place-items:center;text-align:center}
+.ring b{font-size:58px;line-height:1}
+.rank{font-size:26px;font-weight:800;color:var(--amber);text-align:center}
+.rows{display:grid;gap:8px}
+.row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.lb{display:grid;gap:4px;font-variant-numeric:tabular-nums}
+.lb div{display:flex;justify-content:space-between;color:var(--mute)}
+.lb div:first-child{color:var(--text)}
+input.name{background:var(--night);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--text);font:inherit;width:100%;max-width:220px}
+.kc{display:inline-block;background:var(--amber);color:#2b1a00;border-radius:10px;padding:4px 12px;font-weight:800}
+@media (max-width:820px){.hero,.plan,.live,.res{grid-template-columns:1fr}.alloc{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<div id="app">
+  <header class="top">
+    <div class="brand"><i></i><span data-i="brand"></span></div>
+    <div class="chips" id="chips"><span class="chip" data-i="c1"></span><span class="chip" data-i="c2"></span><span class="chip" data-i="c3"></span></div>
+    <div class="tools"><button class="tbtn" id="snd" aria-label="sound">🔊</button><button class="tbtn" id="lang">EN / ع</button></div>
+  </header>
+
+  <section id="s-start" class="screen">
+    <div class="hero">
+      <div class="hero-l">
+        <h1 data-i="title"></h1>
+        <p class="big mute" data-i="sub"></p>
+        <ul class="rules">
+          <li><b>1</b><span data-i="r1"></span></li>
+          <li><b>2</b><span data-i="r2"></span></li>
+          <li><b>3</b><span data-i="r3"></span></li>
+        </ul>
+        <div class="prize"><div class="pz"><b data-i="pz1t"></b><span class="mute" data-i="pz1"></span></div><div class="pz"><b data-i="pz2t"></b><span class="mute" data-i="pz2"></span></div></div>
+        <div><button class="btn" id="go" data-i="play"></button></div>
+      </div>
+      <canvas id="cv-intro" width="640" height="520"></canvas>
+    </div>
+  </section>
+
+  <section id="s-plan" class="screen" hidden>
+    <div><h2 data-i="planT"></h2><p class="mute big" data-i="planS"></p></div>
+    <div class="plan">
+      <div class="card">
+        <div class="pool"><b id="pool">0</b><span class="mute" data-i="pool"></span></div>
+        <div class="alloc" id="alloc" style="margin-top:12px"></div>
+      </div>
+      <div class="card" id="datacard">
+        <h2 style="font-size:20px" data-i="dataT"></h2>
+        <p class="mute" data-i="dataS" style="margin-top:4px"></p>
+        <div style="margin-top:12px"><button class="btn sec" id="showdata" data-i="showData" style="font-size:16px;padding:10px 18px"></button></div>
+        <div class="bars" id="bars" hidden></div>
+        <p class="mute" id="datanote" hidden style="margin-top:12px;font-size:14px"></p>
+      </div>
+    </div>
+    <div><button class="btn" id="start2" data-i="kick"></button></div>
+  </section>
+
+  <section id="s-live" class="screen" hidden>
+    <div class="hud">
+      <h2 id="rtitle" style="font-size:22px"></h2>
+      <div class="timer"><i id="tbar"></i></div>
+      <div class="scorebox"><span id="live-sc">100</span><small data-i="now"></small></div>
+    </div>
+    <div class="live">
+      <div class="stage"><canvas id="cv" width="760" height="620"></canvas><div class="banner" id="banner"></div></div>
+      <div class="cards" id="cards"></div>
+    </div>
+    <p class="mute" id="hint" style="font-size:14px"></p>
+  </section>
+
+  <section id="s-result" class="screen" hidden>
+    <div class="res">
+      <div class="card" style="display:grid;gap:14px;align-content:start">
+        <div class="ring" id="ring" style="--p:0"><div><span><b id="tot">0</b><br><small class="mute" data-i="outOf"></small></span></div></div>
+        <div class="rank" id="rank"></div>
+        <p class="mute" id="rankd" style="text-align:center"></p>
+        <div style="text-align:center" id="reward"></div>
+      </div>
+      <div class="card" style="display:grid;gap:14px;align-content:start">
+        <div class="rows" id="rows"></div>
+        <div class="card" style="background:var(--panel2)"><b data-i="whyT"></b><p class="mute" id="why" style="margin-top:6px"></p></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input class="name" id="pname" maxlength="14" data-ph="namePh"><button class="btn sec" id="save" style="font-size:16px;padding:10px 18px" data-i="save"></button>
+        </div>
+        <div class="lb" id="lb"></div>
+        <div><button class="btn" id="again" data-i="again"></button></div>
+      </div>
+    </div>
+  </section>
+</div>
+<script>
+// ---- simulation engine (pure logic) ----
+const CFG = {
+  gates: {
+    key: 'gates', duration: 45, mu: 3.0, danger: 160,
+    nodes: ['g1','g2','g3','g4'],
+    share: [0.14, 0.24, 0.46, 0.16],
+    staff: [2,2,2,2],
+    A: t => 28 * Math.pow(Math.sin(Math.PI * Math.min(t,45) / 45), 1.1),
+    events: [
+      {at: 14, dur: 12, type: 'surge', node: 2, amount: 0.45, id: 'bus'},
+      {at: 29, dur: 10, type: 'slow', amount: 0.8, id: 'rain'}
+    ]
+  },
+  half: {
+    key: 'half', duration: 35, mu: 3.0, danger: 120,
+    nodes: ['food','wc','shop'],
+    share: [0.5, 0.3, 0.2],
+    staff: [2,2,2],
+    A: t => 30 * (t/5) * Math.exp(1 - t/5) + 5,
+    events: [
+      {at: 0, dur: 1, type: 'info', id: 'whistle'},
+      {at: 16, dur: 9, type: 'surge', node: 1, amount: 0.5, id: 'goal'}
+    ]
+  }
+};
+function makeSim(cfg, staff0) {
+  const n = cfg.nodes.length;
+  return { cfg, t: 0, q: Array(n).fill(0), staff: (staff0 || cfg.staff).slice(),
+    redirectUntil: Array(n).fill(-1), readyAt: Array(n).fill(0), moveReadyAt: 0,
+    slow: 1, surge: Array(n).fill(0), fired: {}, newEvents: [], done: false,
+    acc: { sumMax: 0, ticks: 0, danger: 0, peak: 0 } };
+}
+function effShares(s) {
+  const c = s.cfg, n = c.nodes.length, out = c.share.slice();
+  const red = [];
+  for (let i = 0; i < n; i++) if (s.redirectUntil[i] > s.t) red.push(i);
+  red.forEach(i => {
+    const moved = c.share[i] * 0.65; out[i] -= moved;
+    const tgt = []; let wsum = 0;
+    for (let j = 0; j < n; j++) if (!red.includes(j)) { const w = 1 / (s.q[j] + 30); tgt.push([j, w]); wsum += w; }
+    if (!tgt.length) { out[i] += moved; return; }
+    tgt.forEach(([j, w]) => out[j] += moved * w / wsum);
+  });
+  return out;
+}
+function step(s, dt) {
+  if (s.done) return;
+  const c = s.cfg, n = c.nodes.length;
+  c.events.forEach((e, k) => { if (!s.fired[k] && s.t >= e.at) { s.fired[k] = true; s.newEvents.push(e); } });
+  s.slow = 1; s.surge.fill(0);
+  c.events.forEach(e => { if (s.t >= e.at && s.t < e.at + e.dur) {
+    if (e.type === 'surge') s.surge[e.node] += e.amount;
+    if (e.type === 'slow') s.slow *= e.amount; } });
+  const A = c.A(s.t), sh = effShares(s); let maxq = 0;
+  for (let i = 0; i < n; i++) {
+    const arr = A * sh[i] * (1 + s.surge[i]) * dt;
+    const cap = c.mu * s.slow * s.staff[i] * dt;
+    const avail = s.q[i] + arr;
+    s.q[i] = avail - Math.min(avail, cap);
+    if (s.q[i] > maxq) maxq = s.q[i];
+  }
+  s.acc.sumMax += maxq; s.acc.ticks++;
+  if (maxq > c.danger) s.acc.danger += dt;
+  if (maxq > s.acc.peak) s.acc.peak = maxq;
+  s.t += dt; if (s.t >= c.duration) s.done = true;
+}
+function addStaff(s, i) {
+  if (s.t < s.moveReadyAt) return false;
+  let d = -1, best = 1e9;
+  for (let j = 0; j < s.staff.length; j++) if (j !== i && s.staff[j] > 1 && s.q[j] < best) { best = s.q[j]; d = j; }
+  if (d < 0) return false;
+  s.staff[d]--; s.staff[i]++; s.moveReadyAt = s.t + 1.2; return true;
+}
+function redirect(s, i) {
+  if (s.t < s.readyAt[i]) return false;
+  s.redirectUntil[i] = s.t + 9; s.readyAt[i] = s.t + 14; return true;
+}
+function scoreOf(s) {
+  const m = s.acc.sumMax / Math.max(1, s.acc.ticks) / s.cfg.danger;
+  const df = s.acc.danger / s.cfg.duration;
+  return Math.max(5, Math.min(100, Math.round(100 - 50 * m - 60 * df)));
+}
+function waitMin(s, i) { return Math.round(s.q[i] / (s.cfg.mu * Math.max(0.5, s.staff[i])) * 0.4); }
+function idealStaff(cfg) {
+  const tot = cfg.staff.reduce((a, b) => a + b, 0);
+  const raw = cfg.share.map(x => x * tot); const st = raw.map(x => Math.max(1, Math.floor(x)));
+  let left = tot - st.reduce((a, b) => a + b, 0);
+  const order = raw.map((x, i) => [x - Math.floor(x), i]).sort((a, b) => b[0] - a[0]);
+  let k = 0; while (left > 0) { st[order[k % order.length][1]]++; left--; k++; }
+  return st;
+}
+function runBot(cfg, staff0, smart) {
+  const s = makeSim(cfg, staff0), dt = 0.1; let tick = 0;
+  while (!s.done) {
+    if (smart && tick % 8 === 0) {
+      let w = 0; for (let i = 1; i < s.q.length; i++) if (s.q[i] > s.q[w]) w = i;
+      if (s.q[w] > cfg.danger * 0.35) { redirect(s, w); addStaff(s, w); }
+    }
+    step(s, dt); tick++;
+  }
+  return scoreOf(s);
+}
+// ---- texts ----
+const T = {
+ en: {
+  brand:'Match Night', c1:'1 · Plan', c2:'2 · Gates', c3:'3 · Halftime',
+  title:'You run the <em>stadium</em> tonight.', sub:'60,000 fans. One data dashboard. Three decisions that change the night.',
+  r1:'Plan your staff before kick-off. Open the data or guess.', r2:'Fans arrive. Watch the queues and react fast.', r3:'Halftime rush. Keep every service point under control.',
+  pz1t:'Score 50+', pz1:'Sticker + keycap keychain', pz2t:'Any score', pz2:'A smart-fan sticker', play:'Kick off ⚽',
+  planT:'Round 1 · Plan before kick-off', planS:'Place your 8 staff across the gates. They stay there when the fans arrive.',
+  pool:'staff left to place', dataT:'Gate data dashboard', dataS:'Where did fans enter in the last 5 matches?', showData:'Open the dashboard',
+  datanote:'Gate 3 is next to the metro station. Share of fans per gate, average of 5 matches.', kick:'Open the gates ▶', gate:'Gate',
+  now:'score now', staff:'staff', wait:'min wait', addStaff:'+ Staff', redir:'Redirect fans', cd:'wait',
+  g1:'Gate 1', g2:'Gate 2', g3:'Gate 3', g4:'Gate 4', food:'Food court', wc:'Restrooms', shop:'Fan shop',
+  rt2:'Round 2 · Fans arriving', rt3:'Round 3 · Halftime', hint2:'Tap “+ Staff” to move a worker from the quietest gate. “Redirect fans” sends an app alert that pushes 65% of that gate’s fans elsewhere for 9 seconds.',
+  hint3:'Same tools, new rush. The food court gets slammed first, then the restrooms.',
+  bus:'🚌 Bus convoy arrived at Gate 3!', rain:'🌧 Rain started. Everyone moves slower.', whistle:'⏱ Halftime whistle! Fans rush the services.', goal:'⚽ Goal! Restroom queue is growing.',
+  outOf:'out of 100', whyT:'What BI did here', 
+  why:'The dashboard showed where fans enter and where queues grow. Managers who read it first placed staff before the rush and reacted in seconds, not minutes. That is Business Intelligence applied to crowd management.',
+  r_plan:'Plan before kick-off', r_gates:'Gates', r_half:'Halftime', r_bench:'Data-driven manager benchmark', used:'You opened the data', skipped:'You skipped the data',
+  save:'Save score', namePh:'Your name', again:'Play again ↺', lb:'Today’s best',
+  rk1:'Rookie steward', rk1d:'The crowd won tonight. Try opening the dashboard first.', rk2:'Gate captain', rk2d:'Decent night. A few queues got heavy.',
+  rk3:'Stadium manager', rk3d:'Smooth night. Fans barely noticed the rush.', rk4:'Data-driven legend', rk4d:'Queues stayed short and safe. This is what BI does.',
+  rw1:'Take a smart-fan sticker 🎟', rw2:'Take a <span class="kc">keycap keychain</span> + sticker!',
+  plan_done:'Plan result', bonus:'+8 for using data'
+ },
+ ar: {
+  brand:'ماتش الليلة', c1:'١ · التخطيط', c2:'٢ · البوابات', c3:'٣ · الاستراحة',
+  title:'أنتِ تديرين <em>الملعب</em> الليلة.', sub:'٦٠ ألف مشجع. لوحة بيانات واحدة. ثلاث قرارات تغيّر الليلة.',
+  r1:'وزّعي الموظفين قبل المباراة. افتحي البيانات أو خمّني.', r2:'الجمهور يدخل. راقبي الطوابير وتصرّفي بسرعة.', r3:'ازدحام الاستراحة. حافظي على كل نقطة خدمة تحت السيطرة.',
+  pz1t:'٥٠ نقطة فأكثر', pz1:'ستيكر ومفتاح كي كاب', pz2t:'أي نتيجة', pz2:'ستيكر المشجع الذكي', play:'ابدأ المباراة ⚽',
+  planT:'الجولة ١ · التخطيط قبل صافرة البداية', planS:'وزّعي ٨ موظفين على البوابات. يبقون في أماكنهم لما يبدأ الجمهور يدخل.',
+  pool:'موظفين متبقين للتوزيع', dataT:'لوحة بيانات البوابات', dataS:'من أي بوابة دخل الجمهور في آخر ٥ مباريات؟', showData:'افتحي اللوحة',
+  datanote:'البوابة ٣ بجانب محطة المترو. نسبة الجمهور لكل بوابة بمتوسط ٥ مباريات.', kick:'افتحي البوابات ◀', gate:'بوابة',
+  now:'النتيجة الحالية', staff:'موظف', wait:'دقيقة انتظار', addStaff:'+ موظف', redir:'حوّلي الجمهور', cd:'انتظري',
+  g1:'البوابة ١', g2:'البوابة ٢', g3:'البوابة ٣', g4:'البوابة ٤', food:'ساحة المطاعم', wc:'دورات المياه', shop:'متجر المشجعين',
+  rt2:'الجولة ٢ · دخول الجمهور', rt3:'الجولة ٣ · الاستراحة', hint2:'اضغطي «+ موظف» لنقل موظف من أهدأ بوابة. «حوّلي الجمهور» ترسل تنبيه في التطبيق يحوّل ٦٥٪ من جمهور البوابة لمكان ثاني لمدة ٩ ثواني.',
+  hint3:'نفس الأدوات والزحمة جديدة. ساحة المطاعم تنضغط أول، ثم دورات المياه.',
+  bus:'🚌 وصل رتل الحافلات عند البوابة ٣!', rain:'🌧 بدأ المطر. الكل يتحرك أبطأ.', whistle:'⏱ صافرة الاستراحة! الجمهور يتوجه للخدمات.', goal:'⚽ هدف! طابور دورات المياه يكبر.',
+  outOf:'من ١٠٠', whyT:'وش سوّت BI هنا',
+  why:'اللوحة أوضحت من وين يدخل الجمهور وأين تكبر الطوابير. من قرأها أول وزّع الموظفين قبل الزحمة وتصرّف في ثواني بدل دقائق. هذا هو ذكاء الأعمال (BI) مطبّقاً على إدارة الحشود.',
+  r_plan:'التخطيط قبل المباراة', r_gates:'البوابات', r_half:'الاستراحة', r_bench:'نتيجة المدير المعتمد على البيانات', used:'فتحتِ البيانات', skipped:'تجاوزتِ البيانات',
+  save:'احفظي النتيجة', namePh:'اسمك', again:'العبي مرة ثانية ↺', lb:'أفضل نتائج اليوم',
+  rk1:'متدرّبة مراقبة', rk1d:'الجمهور غلبك الليلة. جرّبي تفتحين اللوحة أول.', rk2:'قائدة بوابة', rk2d:'ليلة معقولة. بعض الطوابير ثقلت.',
+  rk3:'مديرة ملعب', rk3d:'ليلة سلسة. الجمهور ما حسّ بالزحمة.', rk4:'أسطورة البيانات', rk4d:'الطوابير بقت قصيرة وآمنة. هذا ما تسويه BI.',
+  rw1:'خذي ستيكر المشجع الذكي 🎟', rw2:'خذي <span class="kc">كي كاب</span> مع ستيكر!',
+  plan_done:'نتيجة التخطيط', bonus:'+٨ لاستخدام البيانات'
+ }
+};
+// ---- helpers, drawing ----
+const $ = id => document.getElementById(id);
+let lang = 'ar', muted = false, actx = null;
+const t = k => (T[lang][k] != null ? T[lang][k] : k);
+function beep(f, d, type, vol) {
+  if (muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.value = f; g.gain.value = vol || 0.06;
+    o.connect(g); g.connect(actx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + d); o.stop(actx.currentTime + d);
+  } catch (e) {}
+}
+const EMOJI = { food: '🍔', wc: '🚻', shop: '🛍' };
+function layout(W, H, key) {
+  const cx = W / 2, cy = H / 2, rx = W * 0.33, ry = H * 0.33;
+  const ang = key === 'gates' ? [-90, 0, 90, 180] : [-150, -30, 90];
+  return { cx, cy, rx, ry, pts: ang.map(a => { const r = a * Math.PI / 180;
+    return { x: cx + rx * Math.cos(r), y: cy + ry * Math.sin(r), dx: Math.cos(r), dy: Math.sin(r) }; }) };
+}
+function ratioColor(r) { return r < 0.5 ? '#22b36a' : r < 0.85 ? '#f2c14e' : '#e8453c'; }
+function drawStadium(ctx, W, H, sim, time) {
+  const cfg = sim.cfg, L = layout(W, H, cfg.key);
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#072120'; ctx.fillRect(0, 0, W, H);
+  // stands
+  ctx.fillStyle = '#0f3330'; ctx.beginPath(); ctx.ellipse(L.cx, L.cy, L.rx + 20, L.ry + 20, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#1f5f56'; ctx.beginPath(); ctx.ellipse(L.cx, L.cy, L.rx - 4, L.ry - 4, 0, 0, 7); ctx.fill();
+  // pitch
+  const pw = L.rx * 1.45, ph = L.ry * 1.2, px = L.cx - pw / 2, py = L.cy - ph / 2;
+  const gr = ctx.createLinearGradient(0, py, 0, py + ph); gr.addColorStop(0, '#1f9a5c'); gr.addColorStop(1, '#17804a');
+  ctx.fillStyle = gr; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 14); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2;
+  ctx.strokeRect(px + 10, py + 10, pw - 20, ph - 20);
+  ctx.beginPath(); ctx.moveTo(L.cx, py + 10); ctx.lineTo(L.cx, py + ph - 10); ctx.stroke();
+  ctx.beginPath(); ctx.arc(L.cx, L.cy, ph * 0.17, 0, 7); ctx.stroke();
+  ctx.strokeRect(px + 10, L.cy - ph * 0.2, pw * 0.12, ph * 0.4); ctx.strokeRect(px + pw - 10 - pw * 0.12, L.cy - ph * 0.2, pw * 0.12, ph * 0.4);
+  // nodes
+  const sh = effShares(sim), A = cfg.A(Math.min(sim.t, cfg.duration));
+  L.pts.forEach((p, i) => {
+    const q = sim.q[i], r = q / cfg.danger, col = ratioColor(r);
+    // heat glow
+    const gl = ctx.createRadialGradient(p.x, p.y, 4, p.x, p.y, 70 + Math.min(r, 1.3) * 60);
+    gl.addColorStop(0, col + (r < 0.5 ? '55' : 'aa')); gl.addColorStop(1, col + '00');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(p.x, p.y, 140, 0, 7); ctx.fill();
+    // incoming stream
+    const m = Math.max(0, Math.min(10, Math.round(8 * A * sh[i] / 9)));
+    for (let k = 0; k < m; k++) {
+      const ph = ((time * 0.45 + k / m) % 1), d = 190 - ph * 150;
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.15 + 0.45 * ph) + ')';
+      ctx.beginPath(); ctx.arc(p.x + p.dx * d + Math.sin(k * 7 + time) * 5, p.y + p.dy * d + Math.cos(k * 5 + time) * 5, 2.2, 0, 7); ctx.fill();
+    }
+    // queue dots
+    const n = Math.min(81, Math.ceil(q / 2.2)), perp = { x: -p.dy, y: p.dx };
+    ctx.fillStyle = col;
+    for (let k = 0; k < n; k++) {
+      const row = Math.floor(k / 9), c = (k % 9) - 4;
+      const wob = Math.sin(time * 3 + k * 1.7) * 1.2;
+      const ox = p.x + p.dx * (30 + row * 8) + perp.x * (c * 8 + wob), oy = p.y + p.dy * (30 + row * 8) + perp.y * (c * 8 + wob);
+      ctx.beginPath(); ctx.arc(ox, oy, 3.3, 0, 7); ctx.fill();
+    }
+    // redirect ring
+    if (sim.redirectUntil[i] > sim.t) {
+      ctx.strokeStyle = '#7de2d4'; ctx.lineWidth = 3; ctx.setLineDash([6, 6]); ctx.lineDashOffset = -time * 20;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 26, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // danger pulse
+    if (r >= 1) { ctx.strokeStyle = 'rgba(232,69,60,' + (0.4 + 0.4 * Math.sin(time * 8)) + ')'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 34 + Math.sin(time * 8) * 3, 0, 7); ctx.stroke(); }
+    // badge
+    ctx.fillStyle = '#fbf4e2'; ctx.beginPath(); ctx.arc(p.x, p.y, 17, 0, 7); ctx.fill();
+    ctx.fillStyle = '#0f3330'; ctx.font = '800 15px Tajawal, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(cfg.key === 'gates' ? String(i + 1) : EMOJI[cfg.nodes[i]], p.x, p.y + 1);
+    // staff pips (toward the pitch)
+    for (let k = 0; k < sim.staff[i]; k++) { ctx.fillStyle = '#f2c14e'; ctx.beginPath();
+      ctx.roundRect(p.x - p.dx * 32 - sim.staff[i] * 3.5 + k * 7, p.y - p.dy * 32 - 4, 5, 9, 2); ctx.fill(); }
+  });
+  // metro marker near gate 3
+  if (cfg.key === 'gates') { const p = L.pts[2]; ctx.font = '22px sans-serif'; ctx.fillText('🚇', p.x + 54, p.y + 6); }
+}
+// ---- game flow ----
+const G = { round: 0, scores: [0, 0, 0], plan: [2, 2, 2, 2], usedData: false, sim: null, raf: 0, last: 0, acc: 0, time: 0, intro: null, bannerT: 0, shown: [] };
+const SCREENS = ['s-start', 's-plan', 's-live', 's-result'];
+function show(id) { SCREENS.forEach(s => $(s).hidden = s !== id); window.scrollTo(0, 0); }
+function applyLang() {
+  document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i]').forEach(el => el.innerHTML = t(el.dataset.i));
+  document.querySelectorAll('[data-ph]').forEach(el => el.placeholder = t(el.dataset.ph));
+  $('lang').textContent = lang === 'ar' ? 'EN' : 'عربي';
+  if (!$('s-plan').hidden) buildAlloc();
+  if (!$('s-live').hidden) { buildCards(); $('rtitle').textContent = t(G.round === 1 ? 'rt2' : 'rt3'); $('hint').textContent = t(G.round === 1 ? 'hint2' : 'hint3'); }
+  if (!$('s-result').hidden) renderResult();
+  if (!$('bars').hidden) renderBars();
+}
+function setChips() {
+  document.querySelectorAll('#chips .chip').forEach((c, i) => { c.className = 'chip' + (i === G.round ? ' on' : (i < G.round ? ' done' : '')); });
+}
+// intro animation
+function startIntro() {
+  const cv = $('cv-intro'), ctx = cv.getContext('2d'); let sim = makeSim(CFG.gates, CFG.gates.staff), tick = 0;
+  G.intro = true;
+  const loop = ts => {
+    if (!G.intro) return;
+    for (let k = 0; k < 2; k++) { step(sim, 0.1); tick++;
+      if (tick % 8 === 0) { let w = 0; for (let i = 1; i < 4; i++) if (sim.q[i] > sim.q[w]) w = i; if (sim.q[w] > 40) { redirect(sim, w); addStaff(sim, w); } }
+      if (sim.done) { sim = makeSim(CFG.gates, CFG.gates.staff); tick = 0; } }
+    drawStadium(ctx, cv.width, cv.height, sim, ts / 1000); requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+// plan screen
+function buildAlloc() {
+  const box = $('alloc'); box.innerHTML = '';
+  const used = G.plan.reduce((a, b) => a + b, 0), left = 8 - used; $('pool').textContent = left;
+  G.plan.forEach((n, i) => {
+    const d = document.createElement('div'); d.className = 'node';
+    d.innerHTML = '<h3>' + t('g' + (i + 1)) + '</h3><div class="pips">' + '<span class="pip"></span>'.repeat(n) + '</div>' +
+      '<div class="step"><button data-d="-1" aria-label="-">−</button><b style="font-size:22px">' + n + '</b><button data-d="1" aria-label="+">+</button></div>';
+    d.querySelectorAll('button').forEach(b => {
+      const dl = +b.dataset.d; b.disabled = dl < 0 ? G.plan[i] <= 1 : left <= 0;
+      b.onclick = () => { G.plan[i] += dl; beep(dl > 0 ? 520 : 380, 0.07); buildAlloc(); };
+    });
+    box.appendChild(d);
+  });
+  $('start2').disabled = left !== 0;
+}
+function renderBars() {
+  const b = $('bars'); b.innerHTML = '';
+  CFG.gates.share.forEach((s, i) => { const r = document.createElement('div'); r.className = 'bar';
+    r.innerHTML = '<span>' + t('g' + (i + 1)) + '</span><div class="track"><div class="fill" style="width:0"></div></div><b>' + Math.round(s * 100) + '%</b>';
+    b.appendChild(r); });
+  requestAnimationFrame(() => requestAnimationFrame(() => b.querySelectorAll('.fill').forEach((f, i) => f.style.width = (CFG.gates.share[i] / 0.5 * 100) + '%')));
+  $('datanote').textContent = t('datanote');
+}
+// live round
+function buildCards() {
+  const box = $('cards'); box.innerHTML = ''; const cfg = G.sim.cfg;
+  cfg.nodes.forEach((k, i) => {
+    const d = document.createElement('div'); d.className = 'nc'; d.id = 'nc' + i;
+    d.innerHTML = '<div class="nc-h"><b>' + (cfg.key === 'half' ? EMOJI[k] + ' ' : '') + t(k) + '</b><span class="wait"><span id="w' + i + '">0</span> ' + t('wait') + '</span></div>' +
+      '<div class="qbar"><i id="qb' + i + '"></i></div>' +
+      '<div class="pips" id="pp' + i + '"></div>' +
+      '<div class="acts"><button class="act" id="as' + i + '">' + t('addStaff') + '</button><button class="act" id="ar' + i + '">' + t('redir') + '</button></div>';
+    box.appendChild(d);
+    $('as' + i).onclick = () => { if (addStaff(G.sim, i)) beep(660, 0.08); };
+    $('ar' + i).onclick = () => { if (redirect(G.sim, i)) beep(440, 0.18, 'triangle'); };
+  });
+  G.shownStaff = [];
+}
+function banner(msg, ms) { const b = $('banner'); b.textContent = msg; b.classList.remove('show'); void b.offsetWidth; b.classList.add('show'); G.bannerT = performance.now() + (ms || 3500); }
+function startRound(r) {
+  G.round = r; setChips(); const cfg = r === 1 ? CFG.gates : CFG.half;
+  G.sim = makeSim(cfg, r === 1 ? G.plan : cfg.staff); G.acc = 0; G.last = 0;
+  show('s-live'); $('rtitle').textContent = t(r === 1 ? 'rt2' : 'rt3'); $('hint').textContent = t(r === 1 ? 'hint2' : 'hint3');
+  buildCards(); cancelAnimationFrame(G.raf); G.raf = requestAnimationFrame(frame);
+  if (r === 1) banner(t('plan_done') + ': ' + G.scores[0] + (G.usedData ? ' (' + t('bonus') + ')' : ''), 3000);
+}
+function frame(ts) {
+  const s = G.sim; if (!G.last) G.last = ts; let dt = Math.min(0.1, (ts - G.last) / 1000); G.last = ts; G.acc += dt;
+  while (G.acc >= 0.1 && !s.done) { step(s, 0.1); G.acc -= 0.1; }
+  s.newEvents.splice(0).forEach(e => { if (e.type !== 'info' || true) { banner(t(e.id), 3800); beep(e.id === 'whistle' ? 880 : 300, e.id === 'whistle' ? 0.5 : 0.35, 'square', 0.05); } });
+  if (G.bannerT && performance.now() > G.bannerT) { $('banner').classList.remove('show'); G.bannerT = 0; }
+  const cv = $('cv'); drawStadium(cv.getContext('2d'), cv.width, cv.height, s, ts / 1000);
+  $('tbar').style.width = Math.min(100, s.t / s.cfg.duration * 100) + '%';
+  $('live-sc').textContent = s.acc.ticks ? scoreOf(s) : 100;
+  s.cfg.nodes.forEach((k, i) => {
+    const r = s.q[i] / s.cfg.danger, card = $('nc' + i);
+    card.className = 'nc' + (r >= 1 ? ' crit' : r >= 0.6 ? ' warn' : '');
+    $('w' + i).textContent = waitMin(s, i);
+    const qb = $('qb' + i); qb.style.width = Math.min(100, r * 100) + '%'; qb.style.background = ratioColor(r);
+    if (G.shownStaff[i] !== s.staff[i]) { G.shownStaff[i] = s.staff[i]; $('pp' + i).innerHTML = '<span class="pip"></span>'.repeat(s.staff[i]); }
+    $('ar' + i).disabled = s.t < s.readyAt[i];
+    $('as' + i).disabled = s.t < s.moveReadyAt;
+  });
+  if (s.done) { G.scores[G.round] = scoreOf(s); beep(740, 0.3);
+    setTimeout(() => { if (G.round === 1) startRound(2); else finish(); }, 900); return; }
+  G.raf = requestAnimationFrame(frame);
+}
+// ---- result + init ----
+function lbGet() { try { return JSON.parse(localStorage.getItem('matchnight_lb') || '[]'); } catch (e) { return []; } }
+function lbSet(a) { try { localStorage.setItem('matchnight_lb', JSON.stringify(a)); } catch (e) {} }
+function renderLb() {
+  const a = lbGet().sort((x, y) => y.s - x.s).slice(0, 5);
+  $('lb').innerHTML = a.length ? '<b class="mute" style="font-size:13px">' + t('lb') + '</b>' + a.map(r => '<div><span>' + r.n.replace(/[<>&]/g, '') + '</span><b>' + r.s + '</b></div>').join('') : '';
+}
+function bench() {
+  const g = CFG.gates, h = CFG.half;
+  return [Math.min(100, runBot(g, idealStaff(g), false) + 8), runBot(g, idealStaff(g), true), runBot(h, idealStaff(h), true)];
+}
+function finish() {
+  G.round = 3; setChips(); document.querySelectorAll('#chips .chip').forEach(c => c.className = 'chip done');
+  G.total = Math.round(G.scores.reduce((a, b) => a + b, 0) / 3); G.saved = false; show('s-result'); renderResult();
+  beep(523, 0.15); setTimeout(() => beep(659, 0.15), 160); setTimeout(() => beep(784, 0.3), 320);
+}
+function renderResult() {
+  const tot = G.total, b = bench(), bt = Math.round((b[0] + b[1] + b[2]) / 3);
+  $('tot').textContent = tot; $('ring').style.setProperty('--p', tot);
+  const k = tot < 40 ? 1 : tot < 60 ? 2 : tot < 80 ? 3 : 4;
+  $('rank').textContent = t('rk' + k); $('rankd').textContent = t('rk' + k + 'd');
+  $('reward').innerHTML = t(tot >= 50 ? 'rw2' : 'rw1');
+  $('rows').innerHTML = [['r_plan', G.scores[0], b[0]], ['r_gates', G.scores[1], b[1]], ['r_half', G.scores[2], b[2]]]
+    .map(r => '<div class="row"><span>' + t(r[0]) + '</span><b>' + r[1] + ' <span class="mute" style="font-weight:400">/ ' + r[2] + '</span></b></div>').join('') +
+    '<div class="row"><span class="mute">' + t('r_bench') + '</span><b class="mute">' + bt + '</b></div>' +
+    '<div class="row"><span class="mute">' + t(G.usedData ? 'used' : 'skipped') + '</span></div>';
+  $('why').textContent = t('why'); renderLb();
+}
+function newGame() {
+  G.scores = [0, 0, 0]; G.plan = [1, 1, 1, 1]; G.usedData = false; G.round = 0; setChips();
+  $('bars').hidden = true; $('datanote').hidden = true; $('showdata').hidden = false;
+  buildAlloc(); show('s-plan'); applyLang();
+}
+$('lang').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; applyLang(); };
+$('snd').onclick = () => { muted = !muted; $('snd').textContent = muted ? '🔇' : '🔊'; };
+$('go').onclick = () => { G.intro = false; beep(600, 0.12); G.plan = [1, 1, 1, 1]; newGame(); G.plan = [1, 1, 1, 1]; buildAlloc(); };
+$('showdata').onclick = () => { G.usedData = true; $('bars').hidden = false; $('datanote').hidden = false; $('showdata').hidden = true; renderBars(); beep(700, 0.1); };
+$('start2').onclick = () => {
+  G.scores[0] = Math.min(100, runBot(CFG.gates, G.plan, false) + (G.usedData ? 8 : 0)); beep(600, 0.12); startRound(1);
+};
+$('save').onclick = () => {
+  if (G.saved) return; const n = ($('pname').value || '').trim() || '—'; const a = lbGet(); a.push({ n: n.slice(0, 14), s: G.total }); lbSet(a.slice(-60)); G.saved = true; renderLb(); beep(700, 0.1);
+};
+$('again').onclick = () => { $('pname').value = ''; G.plan = [1, 1, 1, 1]; newGame(); G.plan = [1, 1, 1, 1]; buildAlloc(); };
+applyLang(); setChips(); startIntro();
+</script>
